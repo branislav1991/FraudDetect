@@ -1,36 +1,24 @@
-# This model is based on the kernel of  Pranav Pandya and andy harless.
-#       https://www.kaggle.com/pranav84/single-lightgbm-in-r-with-75-mln-rows-lb-0-9690
-#       https://www.kaggle.com/aharless/try-pranav-s-r-lgbm-in-python/code
-# I modified code to make it easier for me
-# The actual changed values are the parameters only. I focused on parameter tuning
-# num_leaves :  7  ->  9
-# max_depth  :  4  ->  5
-# subsample  : 0.7 -> 0.9
-
-
-# This is the first version and will be performing additional data sampling and parameter tuning.
-
-
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 from sklearn.model_selection import train_test_split # for validation 
 import lightgbm as lgb
-import gc # memory 
-from datetime import datetime # train time checking
+import gc
+from datetime import datetime
 
-
+train_path = 'data/train.csv'
+train_sample_path = 'data/train_sample.csv'
+test_path = 'data/test.csv'
 
 start = datetime.now()
-VALIDATE = False
+VALIDATE = True
 RANDOM_STATE = 50
 VALID_SIZE = 0.90
 MAX_ROUNDS = 1000
 EARLY_STOP = 50
 OPT_ROUNDS = 650
-skiprows = range(1,109903891)
+#skiprows = range(1,109903891)
+skiprows = []
 nrows = 75000000
 output_filename = 'submission.csv'
-
-path = '../input/'
 
 dtypes = {
         'ip'            : 'uint32',
@@ -42,10 +30,8 @@ dtypes = {
         'click_id'      : 'uint32'
         }
 
-
-
 train_cols = ['ip','app','device','os', 'channel', 'click_time', 'is_attributed']
-train_df = pd.read_csv(path+"train.csv", skiprows=skiprows, nrows=nrows,dtype=dtypes, usecols=train_cols)
+train_df = pd.read_csv(train_sample_path, skiprows=skiprows, nrows=nrows,dtype=dtypes, usecols=train_cols)
 
 len_train = len(train_df)
 gc.collect()
@@ -53,7 +39,7 @@ gc.collect()
 most_freq_hours_in_test_data = [4, 5, 9, 10, 13, 14]
 least_freq_hours_in_test_data = [6, 11, 15]
 
-def prep_data( df ):
+def prep_data(df):
     
     df['hour'] = pd.to_datetime(df.click_time).dt.hour.astype('uint8')
     df['day'] = pd.to_datetime(df.click_time).dt.day.astype('uint8')
@@ -126,7 +112,6 @@ categorical = ['app', 'device', 'os', 'channel', 'hour']
 
 
 if VALIDATE:
-
     train_df, val_df = train_test_split(train_df, test_size=VALID_SIZE, random_state=RANDOM_STATE, shuffle=True )
     dtrain = lgb.Dataset(train_df[predictors].values, 
                          label=train_df[target].values,
@@ -155,9 +140,7 @@ if VALIDATE:
                       feval=None)
 
     del dvalid
-
 else:
-
     gc.collect()
     dtrain = lgb.Dataset(train_df[predictors].values, label=train_df[target].values,
                           feature_name=predictors,
@@ -181,7 +164,7 @@ del dtrain
 gc.collect()
 
 test_cols = ['ip','app','device','os', 'channel', 'click_time', 'click_id']
-test_df = pd.read_csv(path+"test.csv", dtype=dtypes, usecols=test_cols)
+test_df = pd.read_csv(test_path, dtype=dtypes, usecols=test_cols)
 test_df = prep_data(test_df)
 gc.collect()
 

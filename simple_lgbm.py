@@ -31,7 +31,7 @@ dtypes = {
         }
 
 train_cols = ['ip','app','device','os', 'channel', 'click_time', 'is_attributed']
-train_df = pd.read_csv(train_sample_path, skiprows=skiprows, nrows=nrows,dtype=dtypes, usecols=train_cols)
+train_df = pd.read_csv(train_path, skiprows=skiprows, nrows=nrows,dtype=dtypes, usecols=train_cols)
 
 len_train = len(train_df)
 gc.collect()

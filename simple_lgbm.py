@@ -9,7 +9,7 @@ train_sample_path = 'data/train_sample.csv'
 test_path = 'data/test.csv'
 
 start = datetime.now()
-VALIDATE = False
+VALIDATE = True
 TRAIN = True
 RANDOM_STATE = 50
 VALID_SIZE = 0.90
@@ -84,6 +84,10 @@ if TRAIN:
 
         df.drop( ['ip','day'], axis=1, inplace=True )
         gc.collect()
+
+        df['large_app'] = (df['app'] > 200).astype('uint8')
+        df['large_device'] = (df['device'] > 500).astype('uint8')
+        df['large_os'] = (df['os'] > 100).astype('uint8')
         return df
 
     train_df = prep_data(train_df)
@@ -109,8 +113,12 @@ if TRAIN:
             }
 
     target = 'is_attributed'
-    predictors = ['app','device','os', 'channel', 'hour', 'nip_day_test_hh', 'nip_day_hh', 'nip_hh_os', 'nip_hh_app', 'nip_hh_dev']
-    categorical = ['app', 'device', 'os', 'channel', 'hour']
+    predictors = ['app','device','os', 'channel', 
+        'hour', 'nip_day_test_hh', 'nip_day_hh', 
+        'nip_hh_os', 'nip_hh_app', 'nip_hh_dev', 
+        'large_app', 'large_device', 'large_os']
+    categorical = ['app', 'device', 'os', 'channel', 'hour',
+        'large_app', 'large_device', 'large_os']
 
     if VALIDATE:
         train_df, val_df = train_test_split(train_df, test_size=VALID_SIZE, random_state=RANDOM_STATE, shuffle=True )

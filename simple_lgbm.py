@@ -18,7 +18,7 @@ EARLY_STOP = 50
 OPT_ROUNDS = 650
 #skiprows = range(1,109903891)
 skiprows = []
-nrows = 75000000
+nrows = 100000000
 output_filename = 'submission.csv'
 
 dtypes = {
@@ -82,12 +82,21 @@ if TRAIN:
         del gp
         gc.collect()
 
+        gp = df[['ip', 'device', 'hour', 'channel']].groupby(by=['device', 'app', 'hour'])[['channel']].count().reset_index().rename(index=str, columns={'channel': 'ndev_app_hh'})
+        df = df.merge(gp, on=['ip','device','hour'], how='left')
+        df['nip_hh_dev'] = df['nip_hh_dev'].astype('uint32')
+        del gp
+        gc.collect()
+
+        gp = df[['ip', 'device', 'hour', 'channel']].groupby(by=['device', 'app', 'day'])[['channel']].count().reset_index().rename(index=str, columns={'channel': 'ndev_app_day'})
+        df = df.merge(gp, on=['ip','device','hour'], how='left')
+        df['nip_hh_dev'] = df['nip_hh_dev'].astype('uint32')
+        del gp
+        gc.collect()
+
         df.drop( ['ip','day'], axis=1, inplace=True )
         gc.collect()
 
-        df['large_app'] = (df['app'] > 200).astype('uint8')
-        df['large_device'] = (df['device'] > 500).astype('uint8')
-        df['large_os'] = (df['os'] > 100).astype('uint8')
         return df
 
     train_df = prep_data(train_df)

@@ -18,7 +18,7 @@ EARLY_STOP = 50
 OPT_ROUNDS = 650
 #skiprows = range(1,109903891)
 skiprows = []
-nrows = 100000000
+nrows = 75000000
 output_filename = 'submission.csv'
 
 dtypes = {
@@ -42,12 +42,13 @@ if TRAIN:
     least_freq_hours_in_test_data = [6, 11, 15]
 
     def prep_data(df):
-        
         df['hour'] = pd.to_datetime(df.click_time).dt.hour.astype('uint8')
         df['day'] = pd.to_datetime(df.click_time).dt.day.astype('uint8')
         df.drop(['click_time'], axis=1, inplace=True)
         gc.collect()
         
+        df = df[df['day']==9]
+
         df['in_test_hh'] = (   3 
                             - 2*df['hour'].isin(  most_freq_hours_in_test_data ) 
                             - 1*df['hour'].isin( least_freq_hours_in_test_data ) ).astype('uint8')

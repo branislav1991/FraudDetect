@@ -18,7 +18,7 @@ EARLY_STOP = 50
 OPT_ROUNDS = 650
 #skiprows = range(1,109903891)
 skiprows = []
-nrows = 75000000
+nrows = 150000000
 output_filename = 'submission.csv'
 
 dtypes = {
@@ -48,6 +48,7 @@ if TRAIN:
         gc.collect()
         
         df = df[df['day']==9]
+        gc.collect()
 
         df['in_test_hh'] = (   3 
                             - 2*df['hour'].isin(  most_freq_hours_in_test_data ) 
@@ -109,13 +110,13 @@ if TRAIN:
             'metric':'auc',
             'learning_rate': 0.1,
             'num_leaves': 9,  # we should let it be smaller than 2^(max_depth)
-            'max_depth': 5,  # -1 means no limit
+            'max_depth': 30,  # -1 means no limit
             'min_child_samples': 100,  # Minimum number of data need in a child(min_data_in_leaf)
             'max_bin': 100,  # Number of bucketed bin for feature values
             'subsample': 0.9,  # Subsample ratio of the training instance.
             'subsample_freq': 1,  # frequence of subsample, <=0 means no enable
             'colsample_bytree': 0.7,  # Subsample ratio of columns when constructing each tree.
-            'min_child_weight': 0,  # Minimum sum of instance weight(hessian) needed in a child(leaf)
+            'min_child_weight': 0.01,  # Minimum sum of instance weight(hessian) needed in a child(leaf)
             'min_split_gain': 0,  # lambda_l1, lambda_l2 and min_gain_to_split to regularization
             'nthread': 8,
             'verbose': 0,
@@ -125,10 +126,8 @@ if TRAIN:
     target = 'is_attributed'
     predictors = ['app','device','os', 'channel', 
         'hour', 'nip_day_test_hh', 'nip_day_hh', 
-        'nip_hh_os', 'nip_hh_app', 'nip_hh_dev', 
-        'large_app', 'large_device', 'large_os']
-    categorical = ['app', 'device', 'os', 'channel', 'hour',
-        'large_app', 'large_device', 'large_os']
+        'nip_hh_os', 'nip_hh_app', 'nip_hh_dev'] 
+    categorical = ['app', 'device', 'os', 'channel', 'hour']
 
     if VALIDATE:
         train_df, val_df = train_test_split(train_df, test_size=VALID_SIZE, random_state=RANDOM_STATE, shuffle=True )

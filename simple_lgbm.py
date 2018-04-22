@@ -16,9 +16,8 @@ VALID_SIZE = 0.90
 MAX_ROUNDS = 1000
 EARLY_STOP = 50
 OPT_ROUNDS = 650
-#skiprows = range(1,109903891)
-skiprows = []
-nrows = 75000000
+skiprows = range(1,109903891)
+nrows = 100000000
 output_filename = 'submission.csv'
 
 dtypes = {
@@ -35,7 +34,7 @@ most_freq_hours_in_test_data = [4, 5, 9, 10, 13, 14]
 least_freq_hours_in_test_data = [6, 11, 15]
 
 predictors = ['app','device','os', 'channel', 
-    'hour', 'nip_day_test_hh', 'nip_day_hh', 
+    'hour', 'nip_test_hh', 'nip_hh', 
     'nip_hh_os', 'nip_hh_app', 'nip_hh_dev'] 
 categorical = ['app', 'device', 'os', 'channel', 'hour']
 
@@ -64,22 +63,22 @@ def prep_data(df):
     df.drop(['click_time'], axis=1, inplace=True)
     gc.collect()
     
-    #df = df[df['day']==9]
+    df = df[df['day']==9]
     gc.collect()
 
-    df['in_test_hh'] = (   3 
+    df['in_test_hh'] = (3 
                         - 2*df['hour'].isin(  most_freq_hours_in_test_data ) 
                         - 1*df['hour'].isin( least_freq_hours_in_test_data ) ).astype('uint8')
-    gp = df[['ip', 'day', 'in_test_hh', 'channel']].groupby(by=['ip', 'day', 'in_test_hh'])[['channel']].count().reset_index().rename(index=str, columns={'channel': 'nip_day_test_hh'})
-    df = df.merge(gp, on=['ip','day','in_test_hh'], how='left')
+    gp = df[['ip', 'in_test_hh', 'channel']].groupby(by=['ip', 'in_test_hh'])[['channel']].count().reset_index().rename(index=str, columns={'channel': 'nip_test_hh'})
+    df = df.merge(gp, on=['ip', 'in_test_hh'], how='left')
     df.drop(['in_test_hh'], axis=1, inplace=True)
-    df['nip_day_test_hh'] = df['nip_day_test_hh'].astype('uint32')
+    df['nip_test_hh'] = df['nip_test_hh'].astype('uint32')
     del gp
     gc.collect()
 
-    gp = df[['ip', 'day', 'hour', 'channel']].groupby(by=['ip', 'day', 'hour'])[['channel']].count().reset_index().rename(index=str, columns={'channel': 'nip_day_hh'})
-    df = df.merge(gp, on=['ip','day','hour'], how='left')
-    df['nip_day_hh'] = df['nip_day_hh'].astype('uint16')
+    gp = df[['ip', 'hour', 'channel']].groupby(by=['ip', 'hour'])[['channel']].count().reset_index().rename(index=str, columns={'channel': 'nip_hh'})
+    df = df.merge(gp, on=['ip', 'hour'], how='left')
+    df['nip_hh'] = df['nip_hh'].astype('uint16')
     del gp
     gc.collect()
     
@@ -107,13 +106,10 @@ def prep_data(df):
     del gp
     gc.collect()
 
-    gp = df[['device', 'app', 'day', 'channel']].groupby(by=['device', 'app', 'day'])[['channel']].count().reset_index().rename(index=str, columns={'channel': 'ndev_app_day'})
-    df = df.merge(gp, on=['device','app','day'], how='left')
-    df['ndev_app_day'] = df['ndev_app_day'].astype('uint32')
-    del gp
-    gc.collect()
+    zscore = lambda x: (x - x.mean()) / x.std()
+    df['hour'] = df.groupby('is_attributed')['hour'].transform(zscore)
 
-    df.drop( ['ip','day'], axis=1, inplace=True )
+    df.drop(['ip','day'], axis=1, inplace=True)
     gc.collect()
 
     return df
